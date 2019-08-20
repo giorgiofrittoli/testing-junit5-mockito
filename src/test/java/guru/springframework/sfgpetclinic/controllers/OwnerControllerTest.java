@@ -6,9 +6,14 @@ import guru.springframework.sfgpetclinic.model.Owner;
 import guru.springframework.sfgpetclinic.services.OwnerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +34,25 @@ class OwnerControllerTest {
     @Mock
     BindingResult bindingResult;
 
+    @Captor
+    ArgumentCaptor<String> captor;
+
+    @Test
+    void processCreationFormErrors() {
+
+        //given
+        Owner owner = new Owner(11L, "john", "buck");
+        given(bindingResult.hasErrors()).willReturn(true);
+
+        //when
+        String view = ownerController.processCreationForm(owner, bindingResult);
+
+        //then
+        assertEquals("owners/createOrUpdateOwnerForm", view);
+        then(ownerService).should(never()).save(any(Owner.class));
+
+    }
+
     @Test
     void processCreationFormOK() {
 
@@ -43,6 +67,34 @@ class OwnerControllerTest {
         //then
         assertEquals("redirect:/owners/11", view);
         then(ownerService).should(atMost(1)).save(any(Owner.class));
+    }
 
+    @Test
+    void processFindFormWildCardString() {
+        //given
+        Owner owner = new Owner(11L, "john", "buck");
+        List<Owner> ownerList = new ArrayList<>();
+        final ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        given(ownerService.findAllByLastNameLike(captor.capture())).willReturn(ownerList);
+
+        //when
+        String view = ownerController.processFindForm(owner,bindingResult,null);
+
+        //then
+        assertEquals("%buck%",captor.getValue());
+    }
+
+    @Test
+    void processFindFormWildCardStringAnnotation() {
+        //given
+        Owner owner = new Owner(11L, "john", "buck");
+        List<Owner> ownerList = new ArrayList<>();
+        given(ownerService.findAllByLastNameLike(captor.capture())).willReturn(ownerList);
+
+        //when
+        String view = ownerController.processFindForm(owner,bindingResult,null);
+
+        //then
+        assertEquals("%buck%",captor.getValue());
     }
 }
