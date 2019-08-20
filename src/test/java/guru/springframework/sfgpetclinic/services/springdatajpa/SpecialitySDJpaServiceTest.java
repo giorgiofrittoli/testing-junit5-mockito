@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SpecialitySDJpaServiceTest {
@@ -22,10 +23,21 @@ class SpecialitySDJpaServiceTest {
     @Test
     void deleteById() {
         specialitySDJpaService.deleteById(1L);
+        specialitySDJpaService.deleteById(1L);
+
+        //check numero volte chiamato il metodo del obj
+
+        verify(specialtyRepository, times(2)).deleteById(1L);
+
+        verify(specialtyRepository, atLeast(1)).deleteById(1L);
+
+        verify(specialtyRepository, atMost(5)).deleteById(1L);
+
+        verify(specialtyRepository, never()).deleteById(5L);
     }
 
     @Test
-    void delete(Speciality speciality) {
-        specialitySDJpaService.delete(speciality);
+    void delete() {
+        specialitySDJpaService.delete(new Speciality());
     }
 }
