@@ -11,14 +11,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SpecialitySDJpaServiceTest {
 
-    @Mock
+    @Mock(lenient = true)
     SpecialtyRepository specialtyRepository;
 
     @InjectMocks
@@ -95,5 +94,77 @@ class SpecialitySDJpaServiceTest {
         then(specialtyRepository).should().findById(anyLong());
         then(specialtyRepository).should(times(1)).findById(anyLong());
         then(specialtyRepository).shouldHaveNoMoreInteractions();
+    }
+
+    @Test
+    void testDoThrow() {
+        //when
+        doThrow(new RuntimeException("when")).when(specialtyRepository).deleteById(anyLong());
+
+        //then
+        assertThrows(RuntimeException.class, () -> specialtyRepository.deleteById(anyLong()));
+        verify(specialtyRepository).deleteById(anyLong());
+    }
+
+    @Test
+    void testDoThrowBDD() {
+
+        //given
+        given(specialtyRepository.findById(anyLong())).willThrow(new RuntimeException("boom"));
+
+
+        assertThrows(RuntimeException.class, () -> specialtyRepository.findById(anyLong()));
+        then(specialtyRepository).should().findById(anyLong());
+    }
+
+    @Test
+    void testDoThrowBDD2() {
+
+
+        willThrow(new RuntimeException()).given(specialtyRepository).findById(anyLong());
+
+
+        assertThrows(RuntimeException.class, () -> specialtyRepository.findById(anyLong()));
+        then(specialtyRepository).should().findById(anyLong());
+    }
+
+    @Test
+    void testSaveLamba() {
+        //given
+        String stringToMatch = "TO_MATCH";
+        Speciality speciality = new Speciality();
+        speciality.setDescription(stringToMatch);
+
+        Speciality savedSpeciality = new Speciality();
+        savedSpeciality.setId(1L);
+
+        given(specialtyRepository.save(argThat(spec -> spec.getDescription().equals("TO_MATCH")))).willReturn(savedSpeciality);
+
+        //when
+        Speciality returnSpeciality = specialitySDJpaService.save(speciality);
+
+        //then
+        assertEquals(1L, returnSpeciality.getId().longValue());
+
+    }
+
+    @Test
+    void testSaveLambaNotMatch() {
+        //given
+        String stringToMatch = "TO_MATCH";
+        Speciality speciality = new Speciality();
+        speciality.setDescription(stringToMatch);
+
+        Speciality savedSpeciality = new Speciality();
+        savedSpeciality.setId(1L);
+
+        given(specialtyRepository.save(argThat(spec -> spec.getDescription().equals("asd")))).willReturn(savedSpeciality);
+
+        //when
+        Speciality returnSpeciality = specialitySDJpaService.save(speciality);
+
+        //then
+        assertNull(returnSpeciality);
+
     }
 }
